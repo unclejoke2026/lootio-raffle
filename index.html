@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOOT RAFFLE — LIVE</title>
+<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080b12;--bg2:#0d1120;--bg3:#111827;--card:#131a2a;--card2:#1a2236;--border:#1e2d47;--accent:#00e5ff;--accent2:#7c3aed;--accent3:#f59e0b;--green:#10b981;--red:#ef4444;--text:#e2e8f0;--muted:#64748b;--muted2:#94a3b8;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.blob{position:fixed;border-radius:50%;filter:blur(80px);opacity:0.12;pointer-events:none;z-index:0;animation:blobPulse 8s ease-in-out infinite alternate;}
+.blob1{width:500px;height:500px;background:var(--accent2);top:-100px;right:-100px;}
+.blob2{width:400px;height:400px;background:var(--accent);bottom:-100px;left:-100px;animation-delay:-4s;}
+@keyframes blobPulse{from{transform:scale(1)}to{transform:scale(1.15)}}
+.container{max-width:1100px;margin:0 auto;padding:0 20px;position:relative;z-index:1;}
+header{padding:14px 0;border-bottom:1px solid var(--border);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100;background:rgba(8,11,18,0.9);}
+.header-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.live-badge{display:flex;align-items:center;gap:6px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#ef4444;padding:4px 12px;border-radius:100px;font-size:11px;font-weight:700;letter-spacing:2px;}
+.live-dot{width:7px;height:7px;background:#ef4444;border-radius:50%;animation:blink 1.2s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.connect-btn{display:flex;align-items:center;gap:8px;padding:8px 18px;border-radius:10px;border:1px solid var(--accent);background:rgba(0,229,255,0.08);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
+.connect-btn:hover{background:rgba(0,229,255,0.18);}
+.connect-btn.connected{border-color:var(--green);background:rgba(16,185,129,0.1);color:var(--green);}
+.wallet-status-bar{background:var(--card);border-bottom:1px solid var(--border);padding:8px 0;display:none;}
+.wallet-status-bar.show{display:block;}
+.wsb-inner{display:flex;align-items:center;justify-content:space-between;font-size:12px;}
+.wsb-addr{font-family:'Space Mono',monospace;color:var(--accent2);}
+.wsb-bal{color:var(--green);font-family:'Space Mono',monospace;}
+.ticker-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 20px;margin:18px 0;overflow:hidden;}
+.ticker-inner{display:flex;gap:40px;white-space:nowrap;animation:ticker 28s linear infinite;}
+.ticker-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted2);font-family:'Space Mono',monospace;}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.hero{padding:36px 0 24px;text-align:center;}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(42px,8vw,78px);letter-spacing:2px;line-height:0.95;margin-bottom:12px;background:linear-gradient(135deg,#fff 0%,var(--accent) 60%,var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero-sub{color:var(--muted2);font-size:15px;max-width:400px;margin:0 auto 24px;line-height:1.6;}
+.countdown-bar{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 28px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+.countdown-digits{display:flex;gap:10px;align-items:center;}
+.countdown-num{font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:var(--accent);line-height:1;}
+.countdown-sep{font-family:'Space Mono',monospace;font-size:26px;color:var(--border);animation:blink 1s ease-in-out infinite;}
+.countdown-lbl{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-top:4px;text-align:center;}
+.progress-wrap{flex:1;min-width:200px;}
+.progress-header{display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;}
+.progress-bar-bg{height:8px;background:var(--bg3);border-radius:100px;overflow:hidden;}
+.progress-bar-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--accent2),var(--accent));box-shadow:0 0 12px rgba(0,229,255,0.4);transition:width 0.6s ease;}
+.main-grid{display:grid;grid-template-columns:1fr 390px;gap:22px;margin-bottom:24px;}
+@media(max-width:820px){.main-grid{grid-template-columns:1fr;}.countdown-bar{flex-direction:column;align-items:flex-start;}}
+.prize-card{background:linear-gradient(135deg,#0f1f3d,#1a0a2e);border:1px solid rgba(0,229,255,0.2);border-radius:20px;padding:28px;position:relative;overflow:hidden;}
+.prize-card::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(0,229,255,0.15),transparent 70%);border-radius:50%;}
+.section-label{font-size:10px;text-transform:uppercase;letter-spacing:3px;color:var(--muted);margin-bottom:6px;}
+.prize-amount{font-family:'Bebas Neue',sans-serif;font-size:68px;line-height:1;background:linear-gradient(135deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px;}
+.prize-usd{color:var(--muted2);font-size:17px;margin-bottom:22px;}
+.prize-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.stat-box{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:12px;}
+.stat-val{font-family:'Space Mono',monospace;font-size:19px;font-weight:700;margin-bottom:2px;}
+.stat-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.participants-card{background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden;}
+.card-header{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-header h3{font-size:15px;font-weight:600;}
+.badge-count{background:var(--bg3);border:1px solid var(--border);border-radius:100px;padding:3px 10px;font-size:12px;font-family:'Space Mono',monospace;color:var(--accent);}
+.participants-list{max-height:320px;overflow-y:auto;}
+.participants-list::-webkit-scrollbar{width:4px;}
+.participants-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+.participant-row{display:flex;align-items:center;gap:12px;padding:11px 22px;border-bottom:1px solid rgba(30,45,71,0.5);animation:slideIn 0.35s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.p-rank{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);width:18px;text-align:right;}
+.p-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.p-info{flex:1;min-width:0;}
+.p-addr{font-family:'Space Mono',monospace;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.p-time{font-size:10px;color:var(--muted);margin-top:2px;}
+.p-ticket-count{font-family:'Space Mono',monospace;font-size:13px;color:var(--accent3);font-weight:700;}
+.p-sol{font-size:10px;color:var(--muted);}
+.p-chance{font-size:11px;color:var(--green);min-width:40px;text-align:right;}
+.you-tag{font-size:9px;background:rgba(0,229,255,0.15);border:1px solid rgba(0,229,255,0.3);color:var(--accent);padding:1px 6px;border-radius:4px;margin-left:4px;}
+.buy-panel{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:14px;}
+.buy-panel h3{font-size:16px;font-weight:600;}
+.buy-sub{font-size:13px;color:var(--muted);}
+.info-row{display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:13px 15px;}
+.info-row .lbl{font-size:13px;color:var(--muted2);}
+.info-row .val{font-family:'Space Mono',monospace;font-size:14px;color:var(--accent);font-weight:700;}
+.qty-row{display:flex;align-items:center;gap:10px;}
+.qty-btn{width:36px;height:36px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:18px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.qty-btn:hover{border-color:var(--accent);color:var(--accent);}
+.qty-num{font-family:'Space Mono',monospace;font-size:22px;min-width:38px;text-align:center;}
+.qty-total{margin-left:auto;font-size:13px;color:var(--muted2);}
+.qty-total span{color:var(--accent3);font-weight:600;font-family:'Space Mono',monospace;}
+.preset-row{display:flex;gap:7px;}
+.preset-btn{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--muted2);padding:6px 4px;border-radius:8px;cursor:pointer;font-size:12px;transition:all 0.15s;}
+.preset-btn:hover{border-color:var(--accent);color:var(--accent);}
+.buy-btn{width:100%;padding:15px;border-radius:14px;border:none;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
+.buy-btn.disabled{background:var(--bg3);color:var(--muted);cursor:not-allowed;border:1px solid var(--border);}
+.buy-btn.ready{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;box-shadow:0 4px 20px rgba(0,229,255,0.3);}
+.buy-btn.ready:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(0,229,255,0.45);}
+.buy-btn.loading{background:var(--bg3);color:var(--muted);cursor:wait;border:1px solid var(--border);}
+.buy-btn.success{background:linear-gradient(135deg,#065f46,var(--green));color:#fff;}
+.chance-box{background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:14px;}
+.chance-lbl{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px;}
+.chance-val{font-family:'Space Mono',monospace;font-size:22px;color:var(--green);}
+.chance-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+.toast{position:fixed;bottom:24px;right:24px;z-index:999;background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:14px 18px;max-width:340px;transform:translateY(80px);opacity:0;transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1);}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast-title{font-size:13px;font-weight:600;margin-bottom:4px;}
+.toast-body{font-size:11px;color:var(--muted2);font-family:'Space Mono',monospace;word-break:break-all;}
+.toast.toast-success{border-color:rgba(16,185,129,0.4);}
+.toast.toast-error{border-color:rgba(239,68,68,0.4);}
+.toast.toast-info{border-color:rgba(0,229,255,0.3);}
+footer{border-top:1px solid var(--border);padding:22px 0;margin-top:40px;text-align:center;font-size:12px;color:var(--muted);position:relative;z-index:1;}
+footer::before{content:'';display:block;height:1px;background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),transparent);margin-bottom:22px;opacity:0.35;}
+.spin{animation:spin 1s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <div class="logo">LOOT&#x25CF;IO</div>
+      <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+      <button class="connect-btn" id="connectBtn" onclick="handleWalletClick()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" stroke-width="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" stroke-width="2"/></svg>
+        <span id="connectBtnText">Connect Wallet</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="wallet-status-bar" id="walletStatusBar">
+  <div class="container">
+    <div class="wsb-inner">
+      <span class="wsb-addr" id="wsbAddr"></span>
+      <span class="wsb-bal">&#9675; <span id="wsbBal">0.000</span> SOL</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="ticker-wrap"><div class="ticker-inner" id="ticker"></div></div>
+</div>
+
+<div class="container">
+  <div class="hero">
+    <h1>WIN THE<br>JACKPOT</h1>
+    <p class="hero-sub">Buy tickets with SOL. One random winner takes the entire prize pool. Transparent &amp; on-chain.</p>
+  </div>
+
+  <div class="countdown-bar">
+    <div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:8px;">Draw in</div>
+      <div class="countdown-digits">
+        <div><div class="countdown-num" id="cdH">02</div><div class="countdown-lbl">hrs</div></div>
+        <div class="countdown-sep">:</div>
+        <div><div class="countdown-num" id="cdM">23</div><div class="countdown-lbl">min</div></div>
+        <div class="countdown-sep">:</div>
+        <div><div class="countdown-num" id="cdS">47</div><div class="countdown-lbl">sec</div></div>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span style="color:var(--muted2)">Pool filled</span>
+        <span style="font-family:'Space Mono',monospace;color:var(--accent)" id="progressPct">0%</span>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:var(--muted);">
+        <span>&#9675; <span id="currentSol">0.00</span> raised</span>
+        <span>Goal: &#9675; 100</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div class="prize-card">
+        <div class="section-label">&#127942; Current Prize Pool</div>
+        <div class="prize-amount" id="prizeAmount">0.00</div>
+        <div class="prize-usd">&#8776; $<span id="prizeUsd">0.00</span> USD</div>
+        <div class="prize-stats">
+          <div class="stat-box"><div class="stat-val" id="statTickets">0</div><div class="stat-lbl">Total Tickets</div></div>
+          <div class="stat-box"><div class="stat-val" id="statPlayers">0</div><div class="stat-lbl">Players</div></div>
+          <div class="stat-box"><div class="stat-val">0.05</div><div class="stat-lbl">SOL / Ticket</div></div>
+          <div class="stat-box"><div class="stat-val" id="statTopChance">0%</div><div class="stat-lbl">Top Chance</div></div>
+        </div>
+      </div>
+      <div class="participants-card">
+        <div class="card-header">
+          <h3>Participants</h3>
+          <div class="badge-count" id="totalBadge">0 entries</div>
+        </div>
+        <div class="participants-list" id="participantsList"></div>
+      </div>
+    </div>
+
+    <div class="buy-panel">
+      <div>
+        <h3>&#127903; Buy Tickets</h3>
+        <p class="buy-sub">Connect Phantom wallet and pay with real SOL. Your tickets are tracked automatically.</p>
+      </div>
+      <div class="info-row">
+        <span class="lbl">Price per ticket</span>
+        <span class="val">&#9675; 0.05 SOL</span>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--muted2);margin-bottom:8px;">Quantity</div>
+        <div class="qty-row">
+          <button class="qty-btn" onclick="changeQty(-1)">&#8722;</button>
+          <div class="qty-num" id="qtyNum">1</div>
+          <button class="qty-btn" onclick="changeQty(1)">+</button>
+          <div class="qty-total">Total: <span id="qtyTotal">0.05</span> SOL</div>
+        </div>
+        <div class="preset-row" style="margin-top:8px;">
+          <button class="preset-btn" onclick="setQty(1)">x1</button>
+          <button class="preset-btn" onclick="setQty(5)">x5</button>
+          <button class="preset-btn" onclick="setQty(10)">x10</button>
+          <button class="preset-btn" onclick="setQty(20)">x20</button>
+        </div>
+      </div>
+      <div class="chance-box">
+        <div class="chance-lbl">Your win chance with <span id="chanceQty">1</span> ticket(s)</div>
+        <div class="chance-val" id="yourChance">&#8212;</div>
+        <div class="chance-sub">Based on current pool size</div>
+      </div>
+      <button class="buy-btn disabled" id="buyBtn" onclick="buyTickets()">
+        <span id="buyBtnText">Connect wallet to buy</span>
+      </button>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:12px;">
+        &#128272; <strong style="color:var(--muted2)">How it works:</strong> Clicking Buy opens Phantom and asks you to approve a real SOL transfer directly to the prize wallet. No middleman.
+      </div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:12px;">
+        &#9888;&#65039; <strong style="color:var(--accent3)">Prize wallet:</strong>
+        <span style="font-family:'Space Mono',monospace;font-size:10px;word-break:break-all;display:block;margin-top:4px;color:var(--muted2);">EQajg98Vgx86vucnwFBTsCC2Lme7feYdoRwFa9vgfXu3</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <p style="margin-bottom:6px;">&#127922; LOOT&#183;IO &nbsp;&#183;&nbsp; Solana Raffle</p>
+    <p>All SOL goes directly to the prize wallet. Winner drawn at end of countdown.</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast">
+  <div class="toast-title" id="toastTitle"></div>
+  <div class="toast-body" id="toastBody"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════
+const PRIZE_WALLET    = 'EQajg98Vgx86vucnwFBTsCC2Lme7feYdoRwFa9vgfXu3';
+const TICKET_PRICE    = 0.05; // SOL per ticket
+const SOL_USD         = 148.5;
+const GOAL_SOL        = 100;
+const NETWORK         = 'mainnet-beta'; // change to 'devnet' for testing
+const RPC             = 'https://api.' + NETWORK + '.solana.com';
+
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let walletAddr = null;
+let walletBal  = 0;
+let qty        = 1;
+let participants = [];
+let totalTickets = 0;
+
+// ═══════════════════════════════════════
+//  WALLET
+// ═══════════════════════════════════════
+async function handleWalletClick() {
+  walletAddr ? disconnectWallet() : await connectWallet();
+}
+
+async function connectWallet() {
+  const ph = window.solana;
+  if (!ph || !ph.isPhantom) {
+    showToast('Phantom not found', 'Install Phantom at phantom.app then refresh', 'error');
+    setTimeout(() => window.open('https://phantom.app', '_blank'), 1800);
+    return;
+  }
+  try {
+    showToast('Connecting...', 'Waiting for Phantom', 'info');
+    const resp = await ph.connect();
+    walletAddr = resp.publicKey.toString();
+    onConnected();
+  } catch(e) {
+    showToast('Cancelled', 'Connection rejected', 'error');
+  }
+}
+
+function disconnectWallet() {
+  window.solana && window.solana.disconnect();
+  walletAddr = null; walletBal = 0;
+  document.getElementById('connectBtn').classList.remove('connected');
+  document.getElementById('connectBtnText').textContent = 'Connect Wallet';
+  document.getElementById('walletStatusBar').classList.remove('show');
+  document.getElementById('wsbBal').textContent = '0.000';
+  updateBuyBtn();
+}
+
+function onConnected() {
+  const short = walletAddr.slice(0,4) + '...' + walletAddr.slice(-4);
+  document.getElementById('connectBtn').classList.add('connected');
+  document.getElementById('connectBtnText').textContent = short + ' · Disconnect';
+  document.getElementById('walletStatusBar').classList.add('show');
+  document.getElementById('wsbAddr').textContent = walletAddr.slice(0,6) + '...' + walletAddr.slice(-6);
+  fetchBal();
+  updateBuyBtn();
+  showToast('Wallet connected', short, 'success');
+}
+
+async function fetchBal() {
+  try {
+    const conn = new solanaWeb3.Connection(RPC, 'confirmed');
+    const lamps = await conn.getBalance(new solanaWeb3.PublicKey(walletAddr));
+    walletBal = lamps / solanaWeb3.LAMPORTS_PER_SOL;
+    document.getElementById('wsbBal').textContent = walletBal.toFixed(3);
+  } catch(e) { console.warn(e); }
+}
+
+// ═══════════════════════════════════════
+//  REAL TRANSACTION
+// ═══════════════════════════════════════
+async function buyTickets() {
+  if (!walletAddr) { connectWallet(); return; }
+  const sol = qty * TICKET_PRICE;
+
+  if (walletBal < sol + 0.001) {
+    showToast('Insufficient balance',
+      'Need ' + sol.toFixed(3) + ' SOL + fees, have ' + walletBal.toFixed(3), 'error');
+    return;
+  }
+
+  // Set loading state
+  const btn = document.getElementById('buyBtn');
+  const txt = document.getElementById('buyBtnText');
+  btn.className = 'buy-btn loading'; btn.disabled = true;
+  txt.innerHTML = '<span class="spin">&#10227;</span>Waiting for Phantom...';
+
+  try {
+    const conn   = new solanaWeb3.Connection(RPC, 'confirmed');
+    const from   = new solanaWeb3.PublicKey(walletAddr);
+    const to     = new solanaWeb3.PublicKey(PRIZE_WALLET);
+    const lamps  = Math.round(sol * solanaWeb3.LAMPORTS_PER_SOL);
+
+    const tx = new solanaWeb3.Transaction().add(
+      solanaWeb3.SystemProgram.transfer({ fromPubkey: from, toPubkey: to, lamports: lamps })
+    );
+
+    const { blockhash } = await conn.getLatestBlockhash('finalized');
+    tx.recentBlockhash = blockhash;
+    tx.feePayer = from;
+
+    showToast('Approve in Phantom', 'Sending ' + sol.toFixed(2) + ' SOL for ' + qty + ' ticket(s)', 'info');
+
+    const { signature } = await window.solana.signAndSendTransaction(tx);
+    showToast('Sent! Confirming...', signature.slice(0,20) + '...', 'info');
+
+    await conn.confirmTransaction(signature, 'confirmed');
+
+    // Add to leaderboard
+    const short = walletAddr.slice(0,4) + '...' + walletAddr.slice(-4);
+    const existing = participants.find(p => p.isYou);
+    if (existing) { existing.tickets += qty; existing.sol = (parseFloat(existing.sol)+sol).toFixed(2); }
+    else participants.push({ addr: short, emoji:'&#128104;', color:'#00e5ff', tickets: qty, sol: sol.toFixed(2), time:'just now', isYou:true });
+    totalTickets += qty;
+
+    renderParticipants(); updatePool(); updateQty(); buildTicker();
+    fetchBal();
+
+    btn.className = 'buy-btn success'; btn.disabled = false;
+    txt.textContent = 'Tickets Purchased!';
+    showToast('Tickets confirmed!', qty + ' ticket(s) added. Sig: ' + signature.slice(0,16)+'...', 'success');
+    setTimeout(() => { btn.disabled = false; updateBuyBtn(); }, 3500);
+
+  } catch(e) {
+    console.error(e);
+    const msg = (e.message || '').includes('rejected') ? 'Transaction rejected in Phantom' : (e.message || 'Unknown error');
+    showToast('Transaction failed', msg, 'error');
+    btn.disabled = false; updateBuyBtn();
+  }
+}
+
+function updateBuyBtn() {
+  const btn = document.getElementById('buyBtn');
+  const txt = document.getElementById('buyBtnText');
+  if (!walletAddr) {
+    btn.className = 'buy-btn disabled';
+    txt.textContent = 'Connect wallet to buy';
+  } else {
+    btn.className = 'buy-btn ready';
+    txt.textContent = 'Buy ' + qty + ' Ticket' + (qty > 1 ? 's' : '') + ' · ' + (qty * TICKET_PRICE).toFixed(2) + ' SOL';
+  }
+}
+
+// ═══════════════════════════════════════
+//  PARTICIPANTS
+// ═══════════════════════════════════════
+const emojis = ['&#128009;','&#129418;','&#129409;','&#128058;','&#129445;','&#128047;','&#129412;','&#128059;','&#129419;','&#128044;'];
+const fakeAddrs = ['7xKp...3mWq','BRt9...hD2z','C4Lm...99xF','Dpqr...1aKj','E2mT...7vBn','Fk8s...0zXc','GhYw...4nRs','H3qL...8mPt'];
+
+function initFake() {
+  const n = Math.floor(Math.random()*6)+4;
+  for (let i=0;i<n;i++) {
+    const t = Math.floor(Math.random()*12)+1;
+    participants.push({ addr:fakeAddrs[i%fakeAddrs.length], emoji:emojis[i%emojis.length], color:'hsl('+Math.round(Math.random()*360)+',70%,55%)', tickets:t, sol:(t*TICKET_PRICE).toFixed(2), time:Math.floor(Math.random()*55+1)+'m ago', isYou:false });
+    totalTickets += t;
+  }
+}
+
+function renderParticipants() {
+  const list = document.getElementById('participantsList');
+  list.innerHTML = '';
+  const sorted = [...participants].sort((a,b) => b.tickets - a.tickets);
+  sorted.forEach((p,i) => {
+    const chance = totalTickets > 0 ? ((p.tickets/totalTickets)*100).toFixed(1) : '0';
+    const row = document.createElement('div');
+    row.className = 'participant-row';
+    row.innerHTML =
+      '<div class="p-rank">'+(i+1)+'</div>'+
+      '<div class="p-avatar" style="background:'+p.color+'22;border:1px solid '+p.color+'44">'+p.emoji+'</div>'+
+      '<div class="p-info"><div class="p-addr">'+p.addr+(p.isYou?'<span class="you-tag">YOU</span>':'')+'</div><div class="p-time">'+p.time+'</div></div>'+
+      '<div><div class="p-ticket-count">'+p.tickets+'&#127903;</div><div class="p-sol">'+p.sol+' SOL</div></div>'+
+      '<div class="p-chance">'+chance+'%</div>';
+    list.appendChild(row);
+  });
+  document.getElementById('totalBadge').textContent = participants.length + ' entries';
+  document.getElementById('statPlayers').textContent = participants.length;
+  document.getElementById('statTickets').textContent = totalTickets;
+  const top = totalTickets > 0 ? ((Math.max(...participants.map(p=>p.tickets))/totalTickets)*100).toFixed(1)+'%' : '0%';
+  document.getElementById('statTopChance').textContent = top;
+}
+
+function updatePool() {
+  const sol = (totalTickets * TICKET_PRICE).toFixed(2);
+  const usd = Math.round(sol * SOL_USD).toLocaleString();
+  const pct = Math.min((sol / GOAL_SOL) * 100, 100).toFixed(1);
+  document.getElementById('prizeAmount').textContent = sol;
+  document.getElementById('prizeUsd').textContent = usd;
+  document.getElementById('currentSol').textContent = sol;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+}
+
+// ═══════════════════════════════════════
+//  QTY
+// ═══════════════════════════════════════
+function changeQty(d) { qty = Math.max(1, Math.min(50, qty+d)); updateQty(); }
+function setQty(n) { qty = n; updateQty(); }
+function updateQty() {
+  document.getElementById('qtyNum').textContent = qty;
+  document.getElementById('qtyTotal').textContent = (qty*TICKET_PRICE).toFixed(2);
+  document.getElementById('chanceQty').textContent = qty;
+  document.getElementById('yourChance').textContent = totalTickets > 0
+    ? ((qty/(totalTickets+qty))*100).toFixed(1)+'%' : '100%';
+  updateBuyBtn();
+}
+
+// ═══════════════════════════════════════
+//  COUNTDOWN
+// ═══════════════════════════════════════
+const endTime = Date.now() + (2*3600+23*60+47)*1000;
+function tick() {
+  const left = Math.max(0, Math.floor((endTime - Date.now())/1000));
+  document.getElementById('cdH').textContent = String(Math.floor(left/3600)).padStart(2,'0');
+  document.getElementById('cdM').textContent = String(Math.floor((left%3600)/60)).padStart(2,'0');
+  document.getElementById('cdS').textContent = String(left%60).padStart(2,'0');
+}
+setInterval(tick, 1000); tick();
+
+// ═══════════════════════════════════════
+//  TICKER
+// ═══════════════════════════════════════
+function buildTicker() {
+  const items = participants.map(p =>
+    '<div class="ticker-item"><span style="color:var(--green)">&#9679;</span> '+p.addr+' &middot; '+p.tickets+' ticket(s) &middot; &#9675;'+p.sol+'</div>'
+  );
+  document.getElementById('ticker').innerHTML = [...items,...items].join('');
+}
+
+// ═══════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════
+let toastTimer;
+function showToast(title, body, type) {
+  const el = document.getElementById('toast');
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastBody').textContent = body;
+  el.className = 'toast toast-'+(type||'info')+' show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 6000);
+}
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+window.addEventListener('load', () => {
+  initFake();
+  renderParticipants();
+  updatePool();
+  updateQty();
+  buildTicker();
+
+  // Auto-detect already-connected Phantom
+  if (window.solana && window.solana.isPhantom && window.solana.isConnected && window.solana.publicKey) {
+    walletAddr = window.solana.publicKey.toString();
+    onConnected();
+  }
+
+  // Simulate live entries
+  setInterval(() => {
+    if (Math.random() < 0.35) {
+      const t = Math.floor(Math.random()*5)+1;
+      participants.push({
+        addr: fakeAddrs[Math.floor(Math.random()*fakeAddrs.length)].slice(0,4)+'...'+Math.random().toString(36).slice(-4),
+        emoji: emojis[Math.floor(Math.random()*emojis.length)],
+        color: 'hsl('+Math.round(Math.random()*360)+',70%,55%)',
+        tickets:t, sol:(t*TICKET_PRICE).toFixed(2), time:'just now', isYou:false
+      });
+      totalTickets += t;
+      renderParticipants(); updatePool(); updateQty(); buildTicker();
+    }
+  }, 5000);
+});
+</script>
+</body>
+</html>
